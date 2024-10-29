@@ -56,8 +56,8 @@ _show_min_size_mb = int(args[4])
 _show_count = int(args[5])
 
 # debug
-socks.set_default_proxy(socks.SOCKS5, "127.0.0.1", 1086)
-socket.socket = socks.socksocket
+# socks.set_default_proxy(socks.SOCKS5, "127.0.0.1", 1086)
+# socket.socket = socks.socksocket
 
 heads_: dict = {
     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',

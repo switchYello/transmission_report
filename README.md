@@ -41,8 +41,7 @@ user@debian:/opt/script/tr$ bash start.sh
 ```
 
 ## 安装
-
-> 需要python环境，依赖python的venv组件，如果安装时缺少相关依赖请自行安装好。使用venv进行环境隔离可以防止不同项目间相互影响。
+> 需要python环境，依赖python的venv组件，如果安装时缺少相关依赖请自行安装好。
 
 1. 将本项目从github下载到服务器上,放在某个文件夹下
 2. 初次安装执行如下命令
@@ -56,25 +55,30 @@ python3 -m venv .venv
 source .venv/bin/activate
 #venv环境下安装必要的组件
 python3 -m pip install -r requirements.txt
+#退出虚拟环境
+deactivate
+#加执行权限
+chmod u+x start.sh
 ```
 
 3. 安装成功后可将`requirements.txt`文件删除，保留`start.sh`,`main.py`以及隐藏的`.venv`文件夹就可以了
 
 ## 使用
-
 使用时进入到脚本所在的文件夹下，直接执行 `bash start.sh` 即可运行一次，控制台可输出上述报表。  
 也可将脚本配置在环境变量里，或者创建软连接到你常用的文件夹下方便后续使用。
 
 参数：
-全部可指定参数有如下,可以修改start.sh脚本将默认值改掉这样后续就不用输入参数了.
-> bash start.sh -h http://127.0.0.1:9091 -u tr -p tr -m 500 -c 10
+全部可指定参数有如下,可以修改start.sh脚本将默认值改掉这样后续就不用输入参数了  
+
+> 展示大于500MB的，从大到小排序的前50个种子，账号密码都是tr  
+> bash start.sh -h http://127.0.0.1:9091 -u tr -p tr -m 500 -c 50
 
 ```text
 -h 指定tr地址,需要带前面的http，默认http://127.0.0.1:9091
 -u 指定用户名 默认空字符串
 -p 指定密码 默认空字符串
 -m 小于该大小的种子不显示,单位为MB 默认0全部展示
--c 列表展示前多少个种子 默认2000,种子太多的话一页看不过来
+-c 列表展示前多少个种子 默认2000,不需要太多，不然一页看不过来
 ```
 
 ## 卸载
