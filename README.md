@@ -49,7 +49,9 @@ user@debian:/opt/transmission_report/src$ bash start.sh -utr -ptr -c10
 > 需要python环境，依赖python的venv组件，如果安装时缺少相关依赖请自行安装好。
 
 1. 将本项目从github下载到服务器上,放在某个文件夹下
-> git clone https://github.com/switchYello/transmission_report.git
+```shell
+git clone https://github.com/switchYello/transmission_report.git
+```
 
 2. 执行如下命令初始化python venv环境
 ```shell
@@ -67,18 +69,15 @@ deactivate
 chmod u+x start.sh
 ```
 
-3. 如果后续有更新的话直接 `git pull -f https://github.com/switchYello/transmission_report.git`,不过应该也不会更新了
-
+3. 如果后续有更新的话使用git重新拉代码,不过应该也不会更新了
+```shell
+git pull -f https://github.com/switchYello/transmission_report.git
+```
 
 ## 使用
 使用时进入到脚本所在的文件夹下，直接执行 `bash start.sh` 即可使用默认参数运行一次，控制台可输出上述报表。
 
 参数：
-可指定参数有下面这些,可以通过别名的方式初始好参数这样以后就不用输入参数了。  
-
-> 只展示大于500MB的，从大到小排序的前50个种子，账号密码都是tr  
-> bash start.sh -h http://127.0.0.1:9091 -u tr -p tr -m 500 -c 50
-
 ```text
 -h 指定tr地址,需要带前面的http，默认http://127.0.0.1:9091
 -u 指定用户名 默认空字符串
@@ -87,16 +86,22 @@ chmod u+x start.sh
 -c 列表展示前多少个种子 默认2000,不需要太多，不然一页看不过来
 ```
 
+事例:  
+```text
+只展示大于500MB的，从大到小排序的前50个种子，账号密码都是tr
+bash start.sh -h http://127.0.0.1:9091 -u tr -p tr -m 500 -c 50
+```
+
+
 ## 卸载
-因为使用的venv环境，直接将git对应的文件夹全部删除即可。
+因为使用的venv环境，直接将git对应的文件夹全部删除即可。  
 
 
 ## 小技巧，使用别名方便使用
 ```text
 在用户目录下的隐藏文件.baserc文件中增加如下行（参数和路径自行修改）
 alias reporttr='bash /path_to_source/src/start.sh -u tr -p tr -c200'
-```
+
 保存后执行 `source .baserc`
-
-为这行脚本定义一个别名，后面无论在哪个目录下直接执行`reporttr`都能调用脚本了
-
+这里为这行脚本定义一个别名，后面无论在哪个目录下直接执行`reporttr`都能调用脚本了
+```
