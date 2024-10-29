@@ -46,7 +46,7 @@ user@debian:/opt/transmission_report/src$ bash start.sh -utr -ptr -c10
 ```
 
 ## 安装
-> 需要python环境，依赖python的venv组件，如果安装时缺少相关依赖请自行安装好。
+> **脚本需要python环境，依赖python的venv组件，如果安装时缺少相关依赖请自行安装好。**
 
 1. 将本项目从github下载到服务器上,放在某个文件夹下
 ```shell
@@ -69,7 +69,7 @@ deactivate
 chmod u+x start.sh
 ```
 
-3. 如果后续有更新的话使用git重新拉代码,不过应该也不会更新了
+3. 如果后续有更新的话使用git重新拉代码,不过应该也不需要更新了
 ```shell
 git pull -f https://github.com/switchYello/transmission_report.git
 ```
