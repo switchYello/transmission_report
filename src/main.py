@@ -12,9 +12,10 @@ from prettytable import SINGLE_BORDER
 
 
 class Torrent:
-    def __init__(self, name, size):
+    def __init__(self, name, size, downloadDir):
         self._name = name
         self._size = size
+        self._download_dir = downloadDir
         self._track_list = []
 
     def append_track(self, t, last_update):
@@ -25,6 +26,9 @@ class Torrent:
 
     def get_size(self):
         return self._size
+
+    def get_download_dir(self):
+        return self._download_dir
 
     def get_track_len(self):
         return len(self._track_list)
@@ -57,8 +61,8 @@ _show_min_size_mb = int(args[4])
 _show_count = int(args[5])
 
 # debug
-# socks.set_default_proxy(socks.SOCKS5, "127.0.0.1", 1086)
-# socket.socket = socks.socksocket
+socks.set_default_proxy(socks.SOCKS5, "127.0.0.1", 1086)
+socket.socket = socks.socksocket
 
 heads_: dict = {
     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -72,7 +76,7 @@ if len(_username) > 0 and len(_password) > 0:
 
 data_ = '''{
 "method": "torrent-get",
-"arguments": {"fields": ["id","name","totalSize","trackerStats","activityDate"]},
+"arguments": {"fields": ["id","name","totalSize","trackerStats","activityDate","downloadDir"]},
 "tag": ""
 }'''
 # 获取全量种子信息
@@ -93,9 +97,10 @@ table = {}
 for torrent in torrent_list:
     name = torrent['name']
     totalSize = torrent['totalSize']
+    downloadDir = torrent['downloadDir']
     key = "{}-{}".format(name, totalSize)
     for track in torrent['trackerStats']:
-        torrent_item = table.get(key, Torrent(name, totalSize))  # 获取指定种子的track列表
+        torrent_item = table.get(key, Torrent(name, totalSize, downloadDir))  # 获取指定种子的track列表
         torrent_item.append_track(track['sitename'], datetime.datetime.fromtimestamp(torrent['activityDate']).strftime('%Y-%m-%d %H:%M:%S'))
         table[key] = torrent_item
 
@@ -107,9 +112,9 @@ result.sort(key=lambda torr: torr.get_size(), reverse=True)  # 从大到小排�
 result = result[0:_show_count]  # 已经按大排序了，切片指定数量
 
 # 构建表格打印
-t = pt.PrettyTable(['序号', '文件名', '辅种数量', '文件大小', '站点名称(最后活跃时间)'])
+t = pt.PrettyTable(['序号', '文件名', '下载路径', '辅种数量', '文件大小', '站点名称(最后活跃时间)'])
 for index, it in enumerate(result):
-    t.add_row([index, fill(it.get_name(), width=100), it.get_track_len(), it.pretty_size(), it.pretty_track()], divider=True)
+    t.add_row([index, fill(it.get_name(), width=100), it.get_download_dir(), it.get_track_len(), it.pretty_size(), it.pretty_track()], divider=True)
 t.align['站点名称(最后活跃时间)'] = 'l'
 t.set_style(SINGLE_BORDER)
 print(t)
