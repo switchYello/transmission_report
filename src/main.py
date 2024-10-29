@@ -106,9 +106,9 @@ result.sort(key=lambda torr: torr.get_size(), reverse=True)  # 从大到小排�
 result = result[0:_show_count]  # 已经按大排序了，切片指定数量
 
 # 构建表格打印
-t = pt.PrettyTable(['index', 'name', 'trackCount', 'size', 'sitename'])
+t = pt.PrettyTable(['序号', '文件名', '辅种数量', '文件大小', '站点名称'])
 for index, it in enumerate(result):
     t.add_row([index, fill(it.get_name(), width=100), it.get_track_len(), it.pretty_size(), it.pretty_track()], divider=True)
-t.align['sitename'] = 'l'
+t.align['站点名称'] = 'l'
 t.set_style(SINGLE_BORDER)
 print(t)
