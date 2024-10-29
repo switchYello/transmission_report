@@ -95,7 +95,7 @@ for torrent in torrent_list:
     key = "{}-{}".format(name, totalSize)
     for track in torrent['trackerStats']:
         torrent = table.get(key, Torrent(name, totalSize))  # 获取指定种子的track列表
-        torrent.append_track(track['host'])
+        torrent.append_track(track['sitename'])
         table[key] = torrent
 
 # 过滤
@@ -106,9 +106,9 @@ result.sort(key=lambda torr: torr.get_size(), reverse=True)  # 从大到小排�
 result = result[0:_show_count]  # 已经按大排序了，切片指定数量
 
 # 构建表格打印
-t = pt.PrettyTable(['index', 'name', 'trackCount', 'size', 'tracks'])
+t = pt.PrettyTable(['index', 'name', 'trackCount', 'size', 'sitename'])
 for index, it in enumerate(result):
-    t.add_row([index, fill(it.get_name(), width=70), it.get_track_len(), it.pretty_size(), it.pretty_track()], divider=True)
-t.align['tracks'] = 'l'
+    t.add_row([index, fill(it.get_name(), width=100), it.get_track_len(), it.pretty_size(), it.pretty_track()], divider=True)
+t.align['sitename'] = 'l'
 t.set_style(SINGLE_BORDER)
 print(t)
