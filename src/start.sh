@@ -34,6 +34,11 @@ while getopts 'h:u:p:m:c:' opt; do
   esac
 done
 
-source .venv/bin/activate
-python3 main.py "$host" "$username" "$password" "$show_min_size_mb" "$show_count"
+workdir=$(
+  cd "$(dirname "${BASH_SOURCE[0]}")" || exit
+  pwd
+)
+
+source "${workdir}"/.venv/bin/activate
+python3 "${workdir}"/main.py "$host" "$username" "$password" "$show_min_size_mb" "$show_count"
 deactivate
