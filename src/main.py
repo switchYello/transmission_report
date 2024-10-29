@@ -1,4 +1,5 @@
 import base64
+import datetime
 import json
 import socket
 import sys
@@ -16,8 +17,8 @@ class Torrent:
         self._size = size
         self._track_list = []
 
-    def append_track(self, t):
-        self._track_list.append(t)
+    def append_track(self, t, last_update):
+        self._track_list.append({'track': t, 'last_update': last_update})
 
     def get_name(self):
         return self._name
@@ -43,8 +44,8 @@ class Torrent:
         return '有这么大吗'
 
     def pretty_track(self):
-        self._track_list.sort()
-        return "\n".join(self._track_list)
+        self._track_list.sort(key=lambda t: t['track'])
+        return "\n".join(map(lambda t: '{} ({})'.format(t['track'], t['last_update']), self._track_list))
 
 
 # 参数接收
@@ -71,7 +72,7 @@ if len(_username) > 0 and len(_password) > 0:
 
 data_ = '''{
 "method": "torrent-get",
-"arguments": {"fields": ["id","name","totalSize","trackerStats"]},
+"arguments": {"fields": ["id","name","totalSize","trackerStats","activityDate"]},
 "tag": ""
 }'''
 # 获取全量种子信息
@@ -94,9 +95,9 @@ for torrent in torrent_list:
     totalSize = torrent['totalSize']
     key = "{}-{}".format(name, totalSize)
     for track in torrent['trackerStats']:
-        torrent = table.get(key, Torrent(name, totalSize))  # 获取指定种子的track列表
-        torrent.append_track(track['sitename'])
-        table[key] = torrent
+        torrent_item = table.get(key, Torrent(name, totalSize))  # 获取指定种子的track列表
+        torrent_item.append_track(track['sitename'], datetime.datetime.fromtimestamp(torrent['activityDate']).strftime('%Y-%m-%d %H:%M:%S'))
+        table[key] = torrent_item
 
 # 过滤
 result = []
