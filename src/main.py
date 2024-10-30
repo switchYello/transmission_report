@@ -26,6 +26,9 @@ class Torrent:
     def get_size(self):
         return self._size
 
+    def get_track_list(self):
+        return list(map(lambda t: t['track'], self._track_list))
+
     def get_download_dir(self):
         return self._download_dir
 
@@ -116,15 +119,29 @@ for torrent in torrent_list:
 # 过滤
 result = []
 result.extend(table.values())
+
+# 准备将所有站点的名字拼一起作为表头
+track_name_hash_hash = {}  # 统计站点和做种数
+for torr in result:
+    for t in torr.get_track_list():
+        track_name_hash_hash.update({t: track_name_hash_hash.get(t, 0) + 1})
+track_name_list = []
+for (k, v) in track_name_hash_hash.items():
+    track_name_list.append("{}({})".format(k, v))
+track_name_list.sort()
+title = ','.join(track_name_list)
+
+# 各种过滤
 result = list(filter(lambda torr: torr.get_mb_size() > _show_min_size_mb, result))  # 过滤掉小于指定大小的种子
 result = list(filter(lambda torr: torr.contain_track(_search_track), result))  # 筛选包含需要搜索的track字符的种子
 result.sort(key=lambda torr: torr.get_size(), reverse=True)  # 从大到小排序排序
 result = result[0:_show_count]  # 已经按大排序了，切片指定数量
 
 # 构建表格打印
-t = pt.PrettyTable(['序号', '文件名', '下载路径', '辅种数量', '文件大小', '站点名称(最后活跃时间)'])
-for index, it in enumerate(result):
-    t.add_row([index, fill(it.get_name(), width=90), it.get_download_dir(), it.get_track_len(), it.pretty_size(), it.pretty_track()], divider=True)
+t = pt.PrettyTable(['序号', '文件名', '下载路径', '站点数量', '文件大小', '站点名称(最后活跃时间)'])
+t.title = title
 t.align['站点名称(最后活跃时间)'] = 'l'
 t.set_style(SINGLE_BORDER)
+for index, it in enumerate(result):
+    t.add_row([index, fill(it.get_name(), width=90), it.get_download_dir(), it.get_track_len(), it.pretty_size(), it.pretty_track()], divider=True)
 print(t)
