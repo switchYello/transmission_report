@@ -4,9 +4,10 @@ host=http://127.0.0.1:9091
 username=
 password=
 show_min_size_mb=0
-show_count=2000
+show_count=1000
+search_track=
 
-while getopts 'h:u:p:m:c:' opt; do
+while getopts 'h:u:p:m:c:t:' opt; do
   case "$opt" in
   h)
     host="$OPTARG"
@@ -23,12 +24,16 @@ while getopts 'h:u:p:m:c:' opt; do
   c)
     show_count="$OPTARG"
     ;;
+  t)
+    search_track="$OPTARG"
+    ;;
   '?')
     echo "-h 指定tr地址，默认http://127.0.0.1:9091"
-    echo "-u 指定用户名 默认tr"
-    echo "-p指定密码 默认tr"
-    echo "-m小于该大小的种子不显示,单位为MB 默认0"
-    echo "-c展示前多少个种子 2000"
+    echo "-u 指定用户名 默认无"
+    echo "-p 指定密码 默认无"
+    echo "-m 小于该大小的种子不显示,单位为MB 默认0"
+    echo "-c 展示前多少个种子 1000"
+    echo "-t 搜索的track名称,模糊搜索"
     exit 1
     ;;
   esac
@@ -40,5 +45,5 @@ workdir=$(
 )
 
 source "${workdir}"/.venv/bin/activate
-python3 "${workdir}"/main.py "$host" "$username" "$password" "$show_min_size_mb" "$show_count"
+python3 "${workdir}"/main.py "$host" "$username" "$password" "$show_min_size_mb" "$show_count" "$search_track"
 deactivate

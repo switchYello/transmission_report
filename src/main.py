@@ -1,6 +1,5 @@
 import base64
 import datetime
-import json
 import socket
 import sys
 from textwrap import fill
@@ -33,6 +32,14 @@ class Torrent:
     def get_track_len(self):
         return len(self._track_list)
 
+    def contain_track(self, search_track: str) -> bool:
+        if search_track is None or search_track.strip() == '':
+            return True
+        for tra in self._track_list:
+            if search_track in tra['track']:
+                return True
+        return False
+
     # size对象是B，获取文件的MB大小用于比较
     def get_mb_size(self):
         return float(self._size) / 1024 / 1024
@@ -59,6 +66,7 @@ _username = args[2]
 _password = args[3]
 _show_min_size_mb = int(args[4])
 _show_count = int(args[5])
+_search_track = args[6]
 
 # debug
 # socks.set_default_proxy(socks.SOCKS5, "127.0.0.1", 1086)
@@ -109,6 +117,7 @@ for torrent in torrent_list:
 result = []
 result.extend(table.values())
 result = list(filter(lambda torr: torr.get_mb_size() > _show_min_size_mb, result))  # 过滤掉小于指定大小的种子
+result = list(filter(lambda torr: torr.contain_track(_search_track), result))  # 筛选包含需要搜索的track字符的种子
 result.sort(key=lambda torr: torr.get_size(), reverse=True)  # 从大到小排序排序
 result = result[0:_show_count]  # 已经按大排序了，切片指定数量
 

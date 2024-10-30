@@ -76,25 +76,41 @@ git pull -f https://github.com/switchYello/transmission_report.git
 -u 指定用户名 默认空字符串
 -p 指定密码 默认空字符串
 -m 小于该大小的种子不显示,单位为MB 默认0全部展示
--c 列表展示前多少个种子 默认2000,不需要太多，不然一页看不过来
+-c 列表展示前多少个种子 默认1000,不需要太多，不然一页看不过来
+-t 想要搜索的trade，比如只看包含馒头的可以添加参数 -t tea，就会过滤出包含馒头的种子
 ```
 
-事例:  
+
+示例:  
 ```text
-只展示大于500MB的，从大到小排序的前50个种子，账号密码都是tr
-bash start.sh -h http://127.0.0.1:9091 -u tr -p tr -m 500 -c 50
+搜索馒头的辅种情况，即track中包含team字符的，账号密码都是tr
+bash start.sh -hhttp://127.0.0.1:9091 -utr -ptr -t team
+
+展示大于500MB的，从大到小排序的前50个种子，账号密码都是tr
+bash start.sh -h http://127.0.0.1:9091 -utr -ptr -m500 -c 50
+
+搜索大青虫前100个种子
+bash start.sh -h http://127.0.0.1:9091 -utr -ptr -c 100 -t bug 
 ```
+如果参数和默认值一样可以省略，或者直接修改start.sh脚本将默认值修改成你的，这样就不用每次输入路径和账号密码了
 
 
 ## 卸载
 因为使用的venv环境，直接将git对应的文件夹全部删除即可。  
 
 
-## 小技巧，使用别名方便使用
+
+## 小技巧，使用别名配置默认值
 ```text
 在用户目录下的隐藏文件.baserc文件中增加如下行（参数和路径自行修改）
-alias reporttr='bash /path_to_source/src/start.sh -u tr -p tr -c200'
+cd ~
+vi .bashrc
+alias reporttr='bash /path_to_source/src/start.sh -utr -ptr -c200'
+保存后执行 `source .baserc`或者退出ssh重新连接
 
-保存后执行 `source .baserc`
-这里为这行脚本定义一个别名，后面无论在哪个目录下直接执行`reporttr`都能调用脚本了
+
+上面的意思是为引号内的这行脚本定义一个别名，并且会在启动时初始化到环境变量里。
+后面无论在哪个目录下，像下面这样直接执行`reporttr`都能调用脚本了,而且可以添加参数覆盖别名中的参数
+user@debian:/opt/docker$ reporttr  -c 50
 ```
+
