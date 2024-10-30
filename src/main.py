@@ -138,10 +138,11 @@ result.sort(key=lambda torr: torr.get_size(), reverse=True)  # 从大到小排�
 result = result[0:_show_count]  # 已经按大排序了，切片指定数量
 
 # 构建表格打印
-t = pt.PrettyTable(['序号', '文件名', '下载路径', '站点数量', '文件大小', '站点名称(最后活跃时间)'])
-t.title = title
+t = pt.PrettyTable(['文件名', '下载路径', '站点数量', '文件大小', '站点名称(最后活跃时间)'])
+for it in result:
+    t.add_row([fill(it.get_name(), width=90), it.get_download_dir(), it.get_track_len(), it.pretty_size(), it.pretty_track()], divider=True)
+t.title = title[0:200]
 t.align['站点名称(最后活跃时间)'] = 'l'
 t.set_style(SINGLE_BORDER)
-for index, it in enumerate(result):
-    t.add_row([index, fill(it.get_name(), width=90), it.get_download_dir(), it.get_track_len(), it.pretty_size(), it.pretty_track()], divider=True)
+t.add_autoindex('序号')
 print(t)
