@@ -64,6 +64,7 @@ _show_min_size_mb = int(args[4])
 _show_count = int(args[5])
 _search_track = args[6]
 
+
 # debug
 # socks.set_default_proxy(socks.SOCKS5, "127.0.0.1", 1086)
 # socket.socket = socks.socksocket
@@ -157,6 +158,7 @@ def print_all_report(result):
     for k, v in size_table.items():
         t1.add_row([k, v['count'], byte_format(v['size'])], divider=True)
     t1.set_style(SINGLE_BORDER)
+    t1.title = '数据总览'
     t1.add_autoindex('序号')
     t1.sortby = '做种大小'
     t1.reversesort = True
