@@ -28,7 +28,7 @@ while getopts 'h:u:p:m:c:' opt; do
     echo "-u 指定用户名 默认tr"
     echo "-p指定密码 默认tr"
     echo "-m小于该大小的种子不显示,单位为MB 默认0"
-    echo "-c展示前多少个种子 默认10000"
+    echo "-c展示前多少个种子 2000"
     exit 1
     ;;
   esac

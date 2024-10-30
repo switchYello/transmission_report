@@ -86,11 +86,12 @@ if resp.status_code == 409:
     sessionId = resp.headers['x-transmission-session-id']
     heads_.update({'X-Transmission-Session-Id': sessionId})
     resp = requests.post(_tr_host + '/transmission/rpc', data=data_, headers=heads_)
+if resp.status_code == 401:
+    raise Exception('Unauthorized user.')
 # 解析响应报文
 if not resp.status_code == 200:
-    print("请求tr失败:", resp.text)
-    exit(-1)
-torrent_list = json.loads(resp.text)['arguments']['torrents']
+    raise Exception("请求tr失败:", resp.text)
+torrent_list = resp.json()['arguments']['torrents']
 
 # 创建一个dict，键是种子名拼大小确定唯一值，值为种子对象
 table = {}
@@ -114,7 +115,7 @@ result = result[0:_show_count]  # 已经按大排序了，切片指定数量
 # 构建表格打印
 t = pt.PrettyTable(['序号', '文件名', '下载路径', '辅种数量', '文件大小', '站点名称(最后活跃时间)'])
 for index, it in enumerate(result):
-    t.add_row([index, fill(it.get_name(), width=100), it.get_download_dir(), it.get_track_len(), it.pretty_size(), it.pretty_track()], divider=True)
+    t.add_row([index, fill(it.get_name(), width=90), it.get_download_dir(), it.get_track_len(), it.pretty_size(), it.pretty_track()], divider=True)
 t.align['站点名称(最后活跃时间)'] = 'l'
 t.set_style(SINGLE_BORDER)
 print(t)
