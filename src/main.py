@@ -160,7 +160,11 @@ def generate_detail_report(result):
 # 按照站点统计每个种子的大小和计数，生成总览报表
 def generate_global_report(result):
     size_table = {}  # 按站点统计数量和大小
+    all_count = 0  # 种子总数，一个种子多个站点只计算一次
+    all_size = 0  # 种子总占用，一个种子多个站点只计算一次
     for torr in result:
+        all_count += 1
+        all_size += torr.get_size()
         for sitename in torr.get_track_list():
             exist = size_table.get(sitename, {'site': sitename, 'count': 0, 'size': 0, 'singSeedCount': 0, 'singSeedSize': 0})
             exist['count'] += 1  # 总数计数
@@ -169,7 +173,7 @@ def generate_global_report(result):
                 exist['singSeedCount'] += 1
                 exist['singSeedSize'] += torr.get_size()
             size_table.setdefault(sitename, exist)
-    t = pt.PrettyTable(['站点', '总种子数', '总种子大小', '未辅种数', '未辅种大小', '未辅种比例'])
+    t = pt.PrettyTable(['站点', '做种数', '做种大小', '未辅种数', '未辅种大小', '未辅种比例'])
     values = list(size_table.values())
     values.sort(key=lambda a: a['size'], reverse=True)
     for v in values:
@@ -181,7 +185,7 @@ def generate_global_report(result):
             byte_format(v['singSeedSize']),
             '%.2f%%' % (v['singSeedSize'] / v['size'] * 100)
         ], divider=True)
-    t.title = '数据总览,去重种子总数:%d' % len(result)
+    t.title = '总览,去重种子总数:%d 磁盘实际占用:%s' % (all_count, byte_format(all_size))
     t.set_style(SINGLE_BORDER)
     t.add_autoindex('序号')
     return t
