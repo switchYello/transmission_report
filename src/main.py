@@ -147,21 +147,21 @@ def parse_data(torrent_list: list):
 
 # 按照站点统计每个种子的大小和计数，生成总览报表
 def print_all_report(result):
-    size_table = {}
+    size_table = {}  # 按站点统计数量和大小
     for torr in result:
         for sitename in torr.get_track_list():
-            exist = size_table.get(sitename, {'size': 0, 'count': 0})
+            exist = size_table.get(sitename, {'site': sitename, 'size': 0, 'count': 0})
             exist['size'] += torr.get_size()
             exist['count'] += 1
             size_table.update({sitename: exist})
     t1 = pt.PrettyTable(['站点', '做种个数', '做种大小'])
-    for k, v in size_table.items():
-        t1.add_row([k, v['count'], byte_format(v['size'])], divider=True)
+    values = list(size_table.values())
+    values.sort(key=lambda a: a['size'], reverse=True)
+    for v in values:
+        t1.add_row([v['site'], v['count'], byte_format(v['size'])], divider=True)
     t1.set_style(SINGLE_BORDER)
     t1.title = '数据总览'
     t1.add_autoindex('序号')
-    t1.sortby = '做种大小'
-    t1.reversesort = True
     return t1
 
 
