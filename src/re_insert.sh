@@ -1,13 +1,16 @@
 #!/bin/bash
 
 #移除虚拟环境
+echo '移除旧环境'
 rm -rf .venv
+
+echo '初始化虚拟环境'
 python3 -m venv .venv
-#激活venv环境
 source .venv/bin/activate
-#venv环境下安装必要的组件
+
+echo 'venv环境下安装必要的组件'
 python3 -m pip install -r requirements.txt
-#退出虚拟环境
+
+echo '安装完成'
 deactivate
-#加执行权限
 chmod u+x start.sh

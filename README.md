@@ -108,7 +108,7 @@ git pull -f https://github.com/switchYello/transmission_report.git
 -u 指定用户名 默认空字符串
 -p 指定密码 默认空字符串
 -m 小于该大小的种子不显示,单位为MB 默认0全部展示
--c 列表展示前多少个种子 默认1000
+-c 列表展示前多少个种子 默认500
 -t 想要搜索的trade，比如只看包含馒头的可以添加参数 -t team，就会过滤出包含馒头的种子
 ```
 

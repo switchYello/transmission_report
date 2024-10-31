@@ -4,7 +4,7 @@ host=http://127.0.0.1:9091
 username=
 password=
 show_min_size_mb=0
-show_count=1000
+show_count=500
 search_track=
 
 while getopts 'h:u:p:m:c:t:' opt; do
