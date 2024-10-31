@@ -1,0 +1,130 @@
+[
+  {
+    "--": "此配置文件修改自油猴脚本【官种保种统计】并加以改动适配python",
+    "host": "audiences.me",
+    "abbrev": "Audiences",
+    "siteRegex": "[@-]\\s?(Audies|ADE|ADWeb|ADAudio|ADeBook|ADMusic)"
+  },
+  {
+    "host": "hdsky.me",
+    "abbrev": "SKY",
+    "siteRegex": "[@-]\\s?(HDS)\\b"
+  },
+  {
+    "host": "pterclub.com",
+    "abbrev": "PTer",
+    "siteRegex": "[@-]\\s?(PTer)\\b"
+  },
+  {
+    "host": "ourbits.club",
+    "abbrev": "OB",
+    "siteRegex": "[@-]\\s?(Our|PbK|iLoveTV|FLTTH|Ao|MGs|HosT|iLoveHD)\\b"
+  },
+  {
+    "host": "chdbits.co",
+    "abbrev": "CHD",
+    "uploadSummary": "#ka ",
+    "uploadDateCol": "td:nth-child(4) > span",
+    "uploadSizeCol": "td:nth-child(3)",
+    "siteRegex": "[@-]\\s?(CHD|blucook|HQC|GBT|KAN|OneHD)\\b"
+  },
+  {
+    "host": "club.hares.top",
+    "abbrev": "Hares",
+    "siteRegex": "[@-]\\s?(Hares)\\b"
+  },
+  {
+    "host": "pthome.net",
+    "abbrev": "PTH",
+    "siteRegex": "[@-]\\s?(PTH)\\b"
+  },
+  {
+    "host": "springsunday.net",
+    "abbrev": "SSD",
+    "siteRegex": "[@-]\\s?(CMCT|Oldboys|GTR)\\b"
+  },
+  {
+    "host": "hdhome.org",
+    "abbrev": "HDH",
+    "siteRegex": "[@-]\\s?(HDH)\\b"
+  },
+  {
+    "host": "hdchina.org",
+    "abbrev": "HDC",
+    "siteRegex": "[@-]\\s?(HDC|k9611|tudou|iHD|HDWinG|HDWTV)"
+  },
+  {
+    "host": "hddolby.com",
+    "abbrev": "DB",
+    "siteRegex": "[@-]\\s?(Dream|DBTV|QHstudIo|HDo)\\b"
+  },
+  {
+    "host": "tjupt.org",
+    "abbrev": "TJU",
+    "siteRegex": "[@-]\\s?(TJUPT)\\b"
+  },
+  {
+    "host": "leaves.red",
+    "abbrev": "RedLeaves",
+    "siteRegex": "[@-]\\s?(RL)\\b"
+  },
+  {
+    "host": "totheglory.im",
+    "abbrev": "TTG",
+    "siteRegex": "[@-]\\s?(TTG|Wiki|NGB|DoA|ARiN|ExREN)\\b"
+  },
+  {
+    "host": "ptsbao.club",
+    "abbrev": "PtSbao",
+    "siteRegex": "[@-]\\s?(OPS|FFans|FHDMv)\\b"
+  },
+  {
+    "host": "pt.btschool.club",
+    "abbrev": "Bts",
+    "siteRegex": "[@-]\\s?(Bts)\\b"
+  },
+  {
+    "host": "keepfrds.com",
+    "abbrev": "FRDS",
+    "siteRegex": "[@-]\\s?(FRDS)\\b",
+    "seederLevels": [],
+    "groups": []
+  },
+  {
+    "host": "beitai.pt",
+    "abbrev": "BeiTai",
+    "siteRegex": "[@-]\\s?(BeiTai)\\b",
+    "groups": [],
+    "seederLevels": []
+  },
+  {
+    "host": "hd4fans.org",
+    "abbrev": "beAst",
+    "siteRegex": "[@-]\\s?(beAst)\\b"
+  },
+  {
+    "host": "eastgame.org",
+    "abbrev": "TLFbits",
+    "siteRegex": "[@-]\\s?(TLF)\\b"
+  },
+  {
+    "host": "hhanclub.top",
+    "abbrev": "HH",
+    "siteRegex": "[@-]\\s?(HHWEB)\\b"
+  },
+  {
+    "host": "m-team.cc",
+    "abbrev": "m-team",
+    "siteRegex": "[@-]\\s?(MWeb|MTeam|TPTV)\\b"
+  },
+  {
+    "host": "hdkylin.top,hdkyl.in",
+    "abbrev": "hdkylin",
+    "siteRegex": "[@-]\\s?(HDKWeb|HDKGame)\\b"
+  },
+  {
+    "host": "lemonhd.org,lemonhd.club,ilovelemonhd.me",
+    "abbrev": "LemonHD",
+    "siteRegex": "[@-]\\s?(LHD|LeagueHD|LeagueNF|LeagueTV|LeagueCD|LeagueWEB|i18n|CiNT)\\b"
+  }
+]
