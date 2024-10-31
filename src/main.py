@@ -169,7 +169,7 @@ def generate_global_report(result):
                 exist['singSeedCount'] += 1
                 exist['singSeedSize'] += torr.get_size()
             size_table.setdefault(sitename, exist)
-    t = pt.PrettyTable(['站点', '总辅种数', '总辅种大小', '未辅种数', '未辅种大小', '未辅种比例'])
+    t = pt.PrettyTable(['站点', '总种子数', '总种子大小', '未辅种数', '未辅种大小', '未辅种比例'])
     values = list(size_table.values())
     values.sort(key=lambda a: a['size'], reverse=True)
     for v in values:
