@@ -1,4 +1,3 @@
-import base64
 import datetime
 import socket
 import sys
@@ -8,6 +7,7 @@ import prettytable as pt
 import requests
 import socks
 from prettytable import SINGLE_BORDER
+from requests.auth import HTTPBasicAuth
 
 
 class Torrent:
@@ -26,14 +26,11 @@ class Torrent:
     def get_size(self):
         return self._size
 
-    def get_track_list(self):
-        return list(map(lambda t: t['track'], self._track_list))
-
     def get_download_dir(self):
         return self._download_dir
 
-    def get_track_len(self):
-        return len(self._track_list)
+    def get_track_list(self):
+        return list(map(lambda t: t['track'], self._track_list))
 
     def contain_track(self, search_track: str) -> bool:
         if search_track is None or search_track.strip() == '':
@@ -80,30 +77,22 @@ def byte_format(bytes):
     return '有这么大吗'
 
 
-def fetch_data():
-    heads_: dict = {
-        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
-    }
+def fetch_data() -> list:
+    data_ = '''{
+        "method": "torrent-get",
+        "arguments": {"fields": ["id","name","totalSize","trackerStats","activityDate","downloadDir"]},
+        "tag": ""
+    }'''
+    session = requests.Session()
+    session.headers.update({"user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"})
     # base验证
     if len(_username) > 0 and len(_password) > 0:
-        encoded = base64.b64encode((_username + ':' + _password).encode('utf-8'))
-        encodestring = encoded.decode('utf-8')
-        heads_.update({"Authorization": "Basic " + encodestring})
-
-    data_ = '''{
-    "method": "torrent-get",
-    "arguments": {"fields": ["id","name","totalSize","trackerStats","activityDate","downloadDir"]},
-    "tag": ""
-    }'''
-
-    # 调用接口获取全量种子信息
-    resp = requests.post(_tr_host + '/transmission/rpc', data=data_, headers=heads_)
-    # 如果是409则添加请求头后重新请求重新请求
-    if resp.status_code == 409:
+        session.auth = HTTPBasicAuth(_username, _password)
+    resp = session.post(_tr_host + '/transmission/rpc', data=data_)
+    if resp.status_code == 409:  # 如果是409则添加请求头后重新请求重新请求
         sessionId = resp.headers['x-transmission-session-id']
-        heads_.update({'X-Transmission-Session-Id': sessionId})
-        resp = requests.post(_tr_host + '/transmission/rpc', data=data_, headers=heads_)
+        session.headers.update({'X-Transmission-Session-Id': sessionId})
+        resp = session.post(_tr_host + '/transmission/rpc', data=data_)
     if resp.status_code == 401:
         raise Exception('username or password is incorrect')
     # 解析响应报文
@@ -113,7 +102,7 @@ def fetch_data():
     return torrent_list
 
 
-def parse_data(torrent_list: list):
+def parse_data(torrent_list: list) -> list:
     # 预处理生成track关系映射
     # 有的种子有一个track，有个种子有多个track，如果同一个种子有多个track的则应该只计算一次
     # 比如有个种子有hkd.org,hkd.in两个track，其实这两个track都属于hkd这个站点的，则只统计一次到hkd.org上。并且后续的所有hkd.in都计算时当成hkd.org
@@ -138,36 +127,16 @@ def parse_data(torrent_list: list):
         torrent_item = table.get(key, Torrent(file_name, file_size, download_dir))  # 获取指定种子的track列表
         first_tracker = torrent['trackerStats'][0]  # 取第一个track
         torrent_item.append_track(track_mapper[first_tracker['sitename']], datetime.datetime.fromtimestamp(torrent['activityDate']).strftime('%Y-%m-%d %H:%M:%S'))
-        table[key] = torrent_item
+        table.setdefault(key, torrent_item)
     # 将整理好的种子转移到result中，进行筛选个过滤
     result = []
     result.extend(table.values())
     return result
 
 
-# 按照站点统计每个种子的大小和计数，生成总览报表
-def print_all_report(result):
-    size_table = {}  # 按站点统计数量和大小
-    for torr in result:
-        for sitename in torr.get_track_list():
-            exist = size_table.get(sitename, {'site': sitename, 'size': 0, 'count': 0})
-            exist['size'] += torr.get_size()
-            exist['count'] += 1
-            size_table.update({sitename: exist})
-    t1 = pt.PrettyTable(['站点', '做种个数', '做种大小'])
-    values = list(size_table.values())
-    values.sort(key=lambda a: a['size'], reverse=True)
-    for v in values:
-        t1.add_row([v['site'], v['count'], byte_format(v['size'])], divider=True)
-    t1.set_style(SINGLE_BORDER)
-    t1.title = '数据总览'
-    t1.add_autoindex('序号')
-    return t1
-
-
 # 生成明细报表
-def print_detail_report(result):
-    # 各种过滤
+def generate_detail_report(result):
+    result = result[:]
     result = list(filter(lambda torr: torr.get_mb_size() > _show_min_size_mb, result))  # 过滤掉小于指定大小的种子
     result = list(filter(lambda torr: torr.contain_track(_search_track), result))  # 筛选包含需要搜索的track字符的种子
     result.sort(key=lambda torr: torr.get_size(), reverse=True)  # 从大到小排序排序
@@ -175,8 +144,44 @@ def print_detail_report(result):
     # 构建表格打印
     t = pt.PrettyTable(['文件名', '下载路径', '站点数量', '文件大小', '站点名称(最后活跃时间)'])
     for it in result:
-        t.add_row([fill(it.get_name(), width=90), it.get_download_dir(), it.get_track_len(), it.pretty_size(), it.pretty_track()], divider=True)
+        t.add_row([
+            fill(it.get_name(), width=90),
+            it.get_download_dir(),
+            len(it.get_track_list()),
+            it.pretty_size(),
+            it.pretty_track()
+        ], divider=True)
     t.align['站点名称(最后活跃时间)'] = 'l'
+    t.set_style(SINGLE_BORDER)
+    t.add_autoindex('序号')
+    return t
+
+
+# 按照站点统计每个种子的大小和计数，生成总览报表
+def generate_global_report(result):
+    size_table = {}  # 按站点统计数量和大小
+    for torr in result:
+        for sitename in torr.get_track_list():
+            exist = size_table.get(sitename, {'site': sitename, 'count': 0, 'size': 0, 'singSeedCount': 0, 'singSeedSize': 0})
+            exist['count'] += 1  # 总数计数
+            exist['size'] += torr.get_size()  # 总大小
+            if len(torr.get_track_list()) == 1:  # 统计独立做种的种子
+                exist['singSeedCount'] += 1
+                exist['singSeedSize'] += torr.get_size()
+            size_table.setdefault(sitename, exist)
+    t = pt.PrettyTable(['站点', '总辅种数', '总辅种大小', '未辅种数', '未辅种大小', '未辅种比例'])
+    values = list(size_table.values())
+    values.sort(key=lambda a: a['size'], reverse=True)
+    for v in values:
+        t.add_row([
+            v['site'],
+            v['count'],
+            byte_format(v['size']),
+            v['singSeedCount'],
+            byte_format(v['singSeedSize']),
+            '%.2f%%' % (v['singSeedSize'] / v['size'] * 100)
+        ], divider=True)
+    t.title = '数据总览,去重种子总数:%d' % len(result)
     t.set_style(SINGLE_BORDER)
     t.add_autoindex('序号')
     return t
@@ -184,5 +189,5 @@ def print_detail_report(result):
 
 data = fetch_data()
 result = parse_data(data)
-print(print_detail_report(result))
-print(print_all_report(result))
+print(generate_detail_report(result))
+print(generate_global_report(result))
