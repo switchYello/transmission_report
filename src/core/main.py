@@ -21,12 +21,12 @@ class Torrent:
         self._track_list = []
 
     # 站点视角，每个种子记录只会属于一个站点
-    def append_site(self, site, is_group, last_update):
-        self._site_list.append({'site': site, 'is_group': is_group, 'last_update': last_update})
+    def append_site(self, site, alias, is_group, last_update):
+        self._site_list.append({'site': site, 'alias': alias, 'is_group': is_group, 'last_update': last_update})
 
     # track视角，每个种子可以有多个站点、每个站点有多个track
-    def append_track(self, site, host, announce):
-        self._track_list.append({"site": site, "host": host, "announce": announce})
+    def append_track(self, site, alias, host, announce):
+        self._track_list.append({"site": site, 'alias': alias, "host": host, "announce": announce})
 
     def get_name(self):
         return self._filename
@@ -60,7 +60,7 @@ class Torrent:
 
     def pretty_track(self):
         self._site_list.sort(key=lambda t: t['site'])
-        return "\n".join(map(lambda t: '{}{} ({})'.format(t['site'], '(官种)' if t['is_group'] else '', t['last_update']), self._site_list))
+        return "\n".join(map(lambda t: '{}({}){} ({})'.format(t['site'], t['alias'], '(官种)' if t['is_group'] else '', t['last_update']), self._site_list))
 
 
 # 参数接收
@@ -118,6 +118,7 @@ def parse_data(torrent_list: list) -> list:
     # 比如有个种子有hkd.org,hkd.in两个track，其实这两个track都属于hkd这个站点的，则只统计一次到hkd.org上。并且后续的所有hkd.in都计算时当成hkd.org
     # 将种子列表按照track数量排序，数量多个排前面，一次插入映射表
     torrent_list.sort(key=lambda torrent: len(torrent['trackerStats']), reverse=True)
+    sitename_mapper = {}
     for torrent_json in torrent_list:
         _track_list = torrent_json['trackerStats']
         _track_list.sort(key=lambda torrent: torrent['host'])  # track名字按照自然顺序排序
@@ -131,8 +132,10 @@ def parse_data(torrent_list: list) -> list:
             target_alias = first_track['host']
         # 填充alias
         for track in _track_list:
-            track['alias'] = target_alias  # 根据配置设置别名，如果没有配置则使用host当别名
+            sitename_mapper.setdefault(track['sitename'], first_track['sitename'])
+            track['sitename'] = sitename_mapper[track['sitename']]
             alias_configs.setdefault(track['host'], target_alias)  # 后续都用查找到的alias
+            track['alias'] = alias_configs[track['host']]  # 根据配置设置别名，如果没有配置则使用host当别名
 
     #
     # 遍历种子列表开始统计，如果一个种子有多个track则只统计一次，并且名称按照上面的映射表统一映射
@@ -144,12 +147,13 @@ def parse_data(torrent_list: list) -> list:
         key = "{}-{}".format(file_name, file_size)
         torrent_item = table.get(key, Torrent(file_name, file_size, download_dir))  # 获取指定种子的track列表
         first_tracker = torrent_json['trackerStats'][0]  # 取第一个track
-        sitename = first_tracker['alias']  # 前面统一设置过alias，第一个track的站点名称作为整个种子的站点名称
+        alias = first_tracker['alias']  # 前面统一设置过alias
+        sitename = first_tracker['sitename']  # 前面统一设置过sitename，第一个track的站点名称作为整个种子的站点名称
         for track in torrent_json['trackerStats']:
-            torrent_item.append_track(sitename, track['host'], track['announce'])
+            torrent_item.append_track(sitename, alias, track['host'], track['announce'])
         # 筛选官种配置
         _filter_config, _filter_site = _search_config(configs, torrent_item)
-        torrent_item.append_site(sitename, _filter_config is not None and _filter_site == sitename, datetime.datetime.fromtimestamp(torrent_json['activityDate']).strftime('%Y-%m-%d %H:%M:%S'))
+        torrent_item.append_site(sitename, alias, _filter_config is not None and _filter_site == sitename, datetime.datetime.fromtimestamp(torrent_json['activityDate']).strftime('%Y-%m-%d %H:%M:%S'))
         table.setdefault(key, torrent_item)
     # 将整理好的种子转移到result中，进行筛选个过滤
     result = []
@@ -192,7 +196,8 @@ def generate_group_report(result):
         all_size += torr.get_size()
         # 统计官种和非官种
         for site in torr.get_site_list():
-            _group_detail = group_table.setdefault(site['site'], {"site": site['site'], "g_count": 0, "g_size": 0, "o_count": 0, "o_size": 0, 'multSeedCount': 0, 'multSeedSize': 0})  # 站点
+            _group_detail = group_table.setdefault(site['site'],
+                                                   {"site": site['site'], "alias": site['alias'], "g_count": 0, "g_size": 0, "o_count": 0, "o_size": 0, 'multSeedCount': 0, 'multSeedSize': 0})  # 站点
             if site['is_group']:
                 _group_detail['g_count'] += 1
                 _group_detail['g_size'] += torr.get_size()
@@ -205,10 +210,11 @@ def generate_group_report(result):
                 _group_detail['multSeedSize'] += torr.get_size()
     values = list(group_table.values())
     values.sort(key=lambda d: (d['g_size'] + d['o_size']), reverse=True)
-    t = pt.PrettyTable(['站点', '官种数', '官种大小', '非官种数', '非官种大小', '做种总数', '做种总大小', '辅种数', '辅种总大小', '辅种比例'])
+    t = pt.PrettyTable(['站点', '别名', '官种数', '官种大小', '非官种数', '非官种大小', '做种总数', '做种总大小', '辅种数', '辅种总大小', '辅种比例'])
     for v in values:
         t.add_row([
             v['site'],
+            v['alias'],
             v['g_count'],
             _byte_format(v['g_size']),
             v['o_count'],
