@@ -131,5 +131,10 @@
     "host": "agsvpt.trackers.work",
     "abbrev": "agsv",
     "siteRegex": "[@-]\\s?(AGSVWEB|AGSVMUS)\\b"
+  },
+  {
+    "host": "hdpt.xyz",
+    "abbrev": "明教",
+    "siteRegex": "[@-]\\s?(HDPTWeb|HDPTGame|HDPTE)\\b"
   }
 ]
