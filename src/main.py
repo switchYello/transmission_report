@@ -1,5 +1,6 @@
 import datetime
 import json
+import os
 import re
 import sys
 from textwrap import fill
@@ -103,7 +104,8 @@ def fetch_data() -> list:
 
 
 def parse_data(torrent_list: list) -> list:
-    with open('group_config.json', 'r') as file:
+    _config_path = os.path.dirname(__file__) + '/group_config.json'
+    with open(_config_path, 'r') as file:
         configs: list = json.load(file)
     # 预处理生成track关系映射
     # 有的种子有一个track，有个种子有多个track，如果同一个种子有多个track的则应该只计算一次

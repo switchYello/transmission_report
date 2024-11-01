@@ -126,5 +126,10 @@
     "host": "lemonhd.org,lemonhd.club,ilovelemonhd.me",
     "abbrev": "LemonHD",
     "siteRegex": "[@-]\\s?(LHD|LeagueHD|LeagueNF|LeagueTV|LeagueCD|LeagueWEB|i18n|CiNT)\\b"
+  },
+  {
+    "host": "agsvpt.trackers.work",
+    "abbrev": "agsv",
+    "siteRegex": "[@-]\\s?(AGSVWEB|AGSVMUS)\\b"
   }
 ]
