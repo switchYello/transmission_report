@@ -45,5 +45,5 @@ workdir=$(
 )
 
 source "${workdir}"/.venv/bin/activate
-python3 "${workdir}"/main.py "$host" "$username" "$password" "$show_min_size_mb" "$show_count" "$search_track"
+python3 "${workdir}"/core/main.py "$host" "$username" "$password" "$show_min_size_mb" "$show_count" "$search_track"
 deactivate

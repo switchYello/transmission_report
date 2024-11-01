@@ -78,6 +78,7 @@ _search_track = args[6]
 # socks.set_default_proxy(socks.SOCKS5, "127.0.0.1", 1086)
 # socket.socket = socks.socksocket
 
+
 def fetch_data() -> list:
     data_ = '''{
         "method": "torrent-get",
@@ -104,21 +105,34 @@ def fetch_data() -> list:
 
 
 def parse_data(torrent_list: list) -> list:
-    _config_path = os.path.dirname(__file__) + '/group_config.json'
+    _config_path = os.path.dirname(__file__) + '/../config/group_config.json'
     with open(_config_path, 'r') as file:
         configs: list = json.load(file)
+
+    _alias_config_path = os.path.dirname(__file__) + '/../config/site_alias_config.json'
+    with open(_alias_config_path, 'r') as file:
+        alias_configs: dict = json.load(file)
+
     # 预处理生成track关系映射
     # 有的种子有一个track，有个种子有多个track，如果同一个种子有多个track的则应该只计算一次
     # 比如有个种子有hkd.org,hkd.in两个track，其实这两个track都属于hkd这个站点的，则只统计一次到hkd.org上。并且后续的所有hkd.in都计算时当成hkd.org
     # 将种子列表按照track数量排序，数量多个排前面，一次插入映射表
     torrent_list.sort(key=lambda torrent: len(torrent['trackerStats']), reverse=True)
-    track_mapper = {}  # 维护一张映射表，将hkd.org映射为hkd.org，hkd.in也映射为hkd.in
     for torrent_json in torrent_list:
-        tracks = torrent_json['trackerStats']
-        tracks.sort(key=lambda torrent: torrent['sitename'])  # track名字按照自然顺序排序
-        first_track = tracks[0]  # 取排序后的第一个
-        for track in tracks:
-            track_mapper.setdefault(track['sitename'], first_track['sitename'])  # 全部映射到第一个track的名字上
+        _track_list = torrent_json['trackerStats']
+        _track_list.sort(key=lambda torrent: torrent['host'])  # track名字按照自然顺序排序
+        first_track = _track_list[0]  # 取排序后的第一个
+        # 决策别名,优先使用domain查找，查不到使用host查找，否则直接使用host
+        target_alias = None
+        for track in _track_list:
+            if target_alias is None:
+                target_alias = alias_configs.get(track['host']) or alias_configs.get(_extract_root_domain(track['host']))
+        if target_alias is None:
+            target_alias = first_track['host']
+        # 填充alias
+        for track in _track_list:
+            track['alias'] = target_alias  # 根据配置设置别名，如果没有配置则使用host当别名
+            alias_configs.setdefault(track['host'], target_alias)  # 后续都用查找到的alias
 
     #
     # 遍历种子列表开始统计，如果一个种子有多个track则只统计一次，并且名称按照上面的映射表统一映射
@@ -130,7 +144,7 @@ def parse_data(torrent_list: list) -> list:
         key = "{}-{}".format(file_name, file_size)
         torrent_item = table.get(key, Torrent(file_name, file_size, download_dir))  # 获取指定种子的track列表
         first_tracker = torrent_json['trackerStats'][0]  # 取第一个track
-        sitename = track_mapper[first_tracker['sitename']]  # 第一个track的站点名称作为整个种子的站点名称
+        sitename = first_tracker['alias']  # 前面统一设置过alias，第一个track的站点名称作为整个种子的站点名称
         for track in torrent_json['trackerStats']:
             torrent_item.append_track(sitename, track['host'], track['announce'])
         # 筛选官种配置
@@ -154,7 +168,7 @@ def generate_detail_report(result):
     t = pt.PrettyTable(['文件名', '下载路径', '站点数量', '文件大小', '站点名称(最后活跃时间)'])
     for it in result:
         t.add_row([
-            fill(it.get_name(), width=90),
+            fill(it.get_name(), width=80),
             it.get_download_dir(),
             len(it.get_site_list()),
             it.pretty_size(),
