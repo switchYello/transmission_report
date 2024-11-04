@@ -6,7 +6,7 @@ filter_track=
 filter_path=
 filter_mult_seed_count=-1
 
-while getopts 'm:c:t:p:f:' opt; do
+while getopts ':m:c:t:p:f:?:' opt; do
   case "$opt" in
   m)
     filter_size="$OPTARG"
@@ -23,7 +23,7 @@ while getopts 'm:c:t:p:f:' opt; do
   f)
     filter_mult_seed_count="$OPTARG"
     ;;
-  '?')
+  ?)
     echo "-m 小于该大小的种子不显示,单位为MB 默认0"
     echo "-c 展示前多少个种子 500"
     echo "-t 按照track名称或别名过滤,模糊搜索"

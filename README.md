@@ -128,6 +128,7 @@ git pull -f https://github.com/switchYello/transmission_report.git
 -t 想要搜索的trade或别名，比如只看包含馒头的可以添加参数 -t team，就会过滤出包含馒头的种子 （模糊搜索）
 -p 按照存储路径过滤 （模糊搜索）
 -f 按照辅种站点数量过滤 （精确搜索）
+-? 输出帮助信息
 ```
 
 
