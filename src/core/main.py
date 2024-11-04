@@ -185,8 +185,8 @@ def generate_detail_report(result):
     return t
 
 
-# 统计官种，生成总览报表
 #
+# 统计官种，生成总览报表
 def generate_group_report(result):
     group_table = {}
     all_count = 0  # 种子总数，一个种子多个站点只计算一次
@@ -210,6 +210,13 @@ def generate_group_report(result):
                 _group_detail['multSeedSize'] += torr.get_size()
     values = list(group_table.values())
     values.sort(key=lambda d: (d['g_size'] + d['o_size']), reverse=True)
+    #排序后将别名一致的向前提取
+    for i in range(0, len(values)):
+        for j in range(0, i):
+            if values[i]['alias'] == values[j]['alias']:
+                pop = values.pop(i)
+                values.insert(j + 1, pop)
+                break
     t = pt.PrettyTable(['站点', '别名', '官种数', '官种大小', '非官种数', '非官种大小', '做种总数', '做种总大小', '辅种数', '辅种总大小', '辅种比例'])
     for v in values:
         t.add_row([
