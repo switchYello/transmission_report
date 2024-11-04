@@ -47,7 +47,7 @@ class Torrent:
         if search_track is None or search_track.strip() == '':
             return True
         for tra in self._site_list:
-            if search_track in tra['site']:
+            if search_track in tra['site'] or search_track in tra['alias']:
                 return True
         return False
 
@@ -196,7 +196,7 @@ def generate_group_report(result):
         all_size += torr.get_size()
         # 统计官种和非官种
         for site in torr.get_site_list():
-            _group_detail = group_table.setdefault(site['site'],
+            _group_detail = group_table.setdefault(site['alias'],
                                                    {"site": site['site'], "alias": site['alias'], "g_count": 0, "g_size": 0, "o_count": 0, "o_size": 0, 'multSeedCount': 0, 'multSeedSize': 0})  # 站点
             if site['is_group']:
                 _group_detail['g_count'] += 1
@@ -211,12 +211,12 @@ def generate_group_report(result):
     values = list(group_table.values())
     values.sort(key=lambda d: (d['g_size'] + d['o_size']), reverse=True)
     #排序后将别名一致的向前提取
-    for i in range(0, len(values)):
-        for j in range(0, i):
-            if values[i]['alias'] == values[j]['alias']:
-                pop = values.pop(i)
-                values.insert(j + 1, pop)
-                break
+    # for i in range(0, len(values)):
+    #     for j in range(0, i):
+    #         if values[i]['alias'] == values[j]['alias']:
+    #             pop = values.pop(i)
+    #             values.insert(j + 1, pop)
+    #             break
     t = pt.PrettyTable(['站点', '别名', '官种数', '官种大小', '非官种数', '非官种大小', '做种总数', '做种总大小', '辅种数', '辅种总大小', '辅种比例'])
     for v in values:
         t.add_row([
