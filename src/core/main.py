@@ -153,7 +153,7 @@ def generate_detail_report(result):
         # 明细子表
         subTable = pt.PrettyTable(["站点", "官种", "最后活跃"])
         for site in it.get_site_list():
-            subTable.add_row([site['alias'], '❤️' if site['is_group'] else '', site['last_update']])
+            subTable.add_row([site['alias'], 'Y️' if site['is_group'] else '', site['last_update']])
             subTable.sortby = '最后活跃'
             subTable.reversesort = True
         # 主表
