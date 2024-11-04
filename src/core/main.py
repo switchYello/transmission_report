@@ -12,6 +12,13 @@ from prettytable import SINGLE_BORDER
 from requests.auth import HTTPBasicAuth
 
 
+def _safe_get(arr, index, default):
+    if 0 <= index < len(arr):
+        return arr[index]
+    else:
+        return default
+
+
 class Torrent:
     def __init__(self, filename, size, downloadDir):
         self._filename = filename
@@ -65,12 +72,12 @@ class Torrent:
 
 # 参数接收
 args = sys.argv
-_tr_host = args[1]
-_username = args[2]
-_password = args[3]
-_show_min_size_mb = int(args[4])
-_show_count = int(args[5])
-_search_track = args[6]
+_tr_host = _safe_get(args, 1, '')
+_username = _safe_get(args, 2, None)
+_password = _safe_get(args, 3, None)
+_show_min_size_mb = int(_safe_get(args, 4, 0))
+_show_count = int(_safe_get(args, 5, 5000))
+_search_track = _safe_get(args, 6, '')
 
 
 #
@@ -82,7 +89,7 @@ _search_track = args[6]
 def fetch_data() -> list:
     data_ = '''{
         "method": "torrent-get",
-        "arguments": {"fields": ["id","name","totalSize","trackerStats","activityDate","downloadDir","host","announce"]},
+        "arguments": {"fields": ["name","totalSize","trackerStats","activityDate","downloadDir"]},
         "tag": ""
     }'''
     session = requests.Session()
@@ -112,6 +119,11 @@ def parse_data(torrent_list: list) -> list:
     _alias_config_path = os.path.dirname(__file__) + '/../config/site_alias_config.json'
     with open(_alias_config_path, 'r') as file:
         alias_configs: dict = json.load(file)
+        # 扩展配置文件为根域名形式
+        for k, v in dict(alias_configs).items():
+            domain = _extract_root_domain(k)
+            if domain != k:
+                alias_configs.setdefault(domain, v)
 
     # 预处理生成track关系映射
     # 有的种子有一个track，有个种子有多个track，如果同一个种子有多个track的则应该只计算一次
@@ -121,21 +133,22 @@ def parse_data(torrent_list: list) -> list:
     sitename_mapper = {}
     for torrent_json in torrent_list:
         _track_list = torrent_json['trackerStats']
-        _track_list.sort(key=lambda torrent: torrent['host'])  # track名字按照自然顺序排序
+        _track_list.sort(key=lambda torrent: torrent['announce'])  # track名字按照自然顺序排序
         first_track = _track_list[0]  # 取排序后的第一个
         # 决策别名,优先使用domain查找，查不到使用host查找，否则直接使用host
         target_alias = None
         for track in _track_list:
+            track['root_domain'] = _extract_root_domain(track['announce'])  # 提取根域名
             if target_alias is None:
-                target_alias = alias_configs.get(track['host']) or alias_configs.get(_extract_root_domain(track['host']))
+                target_alias = alias_configs.get(track['root_domain'])
         if target_alias is None:
-            target_alias = first_track['host']
+            target_alias = first_track['root_domain']
         # 填充alias
         for track in _track_list:
             sitename_mapper.setdefault(track['sitename'], first_track['sitename'])
             track['sitename'] = sitename_mapper[track['sitename']]
-            alias_configs.setdefault(track['host'], target_alias)  # 后续都用查找到的alias
-            track['alias'] = alias_configs[track['host']]  # 根据配置设置别名，如果没有配置则使用host当别名
+            alias_configs.setdefault(track['root_domain'], target_alias)  # 后续都用查找到的alias
+            track['alias'] = alias_configs[track['root_domain']]  # 根据配置设置别名，如果没有配置则使用host当别名
 
     #
     # 遍历种子列表开始统计，如果一个种子有多个track则只统计一次，并且名称按照上面的映射表统一映射
@@ -210,7 +223,7 @@ def generate_group_report(result):
                 _group_detail['multSeedSize'] += torr.get_size()
     values = list(group_table.values())
     values.sort(key=lambda d: (d['g_size'] + d['o_size']), reverse=True)
-    #排序后将别名一致的向前提取
+    # 排序后将别名一致的向前提取
     # for i in range(0, len(values)):
     #     for j in range(0, i):
     #         if values[i]['alias'] == values[j]['alias']:
