@@ -1,39 +1,34 @@
 #!/bin/bash
 
-host=http://127.0.0.1:9091
-username=
-password=
-show_min_size_mb=0
-show_count=500
-search_track=
+filter_size=0
+filter_count=500
+filter_track=
+filter_path=
+filter_mult_seed_count=-1
 
-while getopts 'h:u:p:m:c:t:' opt; do
+while getopts 'm:c:t:p:f:' opt; do
   case "$opt" in
-  h)
-    host="$OPTARG"
-    ;;
-  u)
-    username="$OPTARG"
-    ;;
-  p)
-    password="$OPTARG"
-    ;;
   m)
-    show_min_size_mb="$OPTARG"
+    filter_size="$OPTARG"
     ;;
   c)
-    show_count="$OPTARG"
+    filter_count="$OPTARG"
     ;;
   t)
-    search_track="$OPTARG"
+    filter_track="$OPTARG"
+    ;;
+  p)
+    filter_path="$OPTARG"
+    ;;
+  f)
+    filter_mult_seed_count="$OPTARG"
     ;;
   '?')
-    echo "-h 指定tr地址，默认http://127.0.0.1:9091"
-    echo "-u 指定用户名 默认无"
-    echo "-p 指定密码 默认无"
     echo "-m 小于该大小的种子不显示,单位为MB 默认0"
-    echo "-c 展示前多少个种子 1000"
-    echo "-t 搜索的track名称,模糊搜索"
+    echo "-c 展示前多少个种子 500"
+    echo "-t 按照track名称或别名过滤,模糊搜索"
+    echo "-p 按照存储路径过滤"
+    echo "-f 按照辅种站点数量过滤"
     exit 1
     ;;
   esac
@@ -45,5 +40,5 @@ workdir=$(
 )
 
 source "${workdir}"/.venv/bin/activate
-python3 "${workdir}"/core/main.py "$host" "$username" "$password" "$show_min_size_mb" "$show_count" "$search_track"
+python3 "${workdir}"/core/main.py "$filter_size" "$filter_count" "$filter_track" "$filter_path" "$filter_mult_seed_count"
 deactivate

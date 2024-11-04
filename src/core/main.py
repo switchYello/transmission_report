@@ -1,22 +1,17 @@
 import datetime
-import json
-import os
 import re
 import sys
 from textwrap import fill
 
 import prettytable as pt
-import requests
-import tldextract
 from prettytable import SINGLE_BORDER
-from requests.auth import HTTPBasicAuth
 
-
-def _safe_get(arr, index, default):
-    if 0 <= index < len(arr):
-        return arr[index]
-    else:
-        return default
+import utils
+from config import Config
+from qbittorent import Qbittorent
+from transmission import Transmission
+from utils import byte_format
+from utils import safe_get
 
 
 class Torrent:
@@ -32,8 +27,8 @@ class Torrent:
         self._site_list.append({'site': site, 'alias': alias, 'is_group': is_group, 'last_update': last_update})
 
     # track视角，每个种子可以有多个站点、每个站点有多个track
-    def append_track(self, site, alias, host, announce):
-        self._track_list.append({"site": site, 'alias': alias, "host": host, "announce": announce})
+    def append_track(self, site, alias, announce):
+        self._track_list.append({"site": site, 'alias': alias, "announce": announce})
 
     def get_name(self):
         return self._filename
@@ -58,12 +53,17 @@ class Torrent:
                 return True
         return False
 
+    def contain_path(self, search_path: str) -> bool:
+        if search_path is None or search_path.strip() == '':
+            return True
+        return search_path.strip() in self._download_dir
+
     # size对象是B，获取文件的MB大小用于比较
     def get_mb_size(self):
         return float(self._size) / 1024 / 1024
 
     def pretty_size(self):
-        return _byte_format(self._size)
+        return byte_format(self._size)
 
     def pretty_track(self):
         self._site_list.sort(key=lambda t: t['site'])
@@ -72,12 +72,11 @@ class Torrent:
 
 # 参数接收
 args = sys.argv
-_tr_host = _safe_get(args, 1, '')
-_username = _safe_get(args, 2, None)
-_password = _safe_get(args, 3, None)
-_show_min_size_mb = int(_safe_get(args, 4, 0))
-_show_count = int(_safe_get(args, 5, 5000))
-_search_track = _safe_get(args, 6, '')
+_show_min_size_mb = int(safe_get(args, 1, 0))
+_show_count = int(safe_get(args, 2, 500))
+_search_track = safe_get(args, 3, '')
+_search_path = safe_get(args, 4, '')
+_search_seed_count = int(safe_get(args, 5, -1))
 
 
 #
@@ -85,46 +84,7 @@ _search_track = _safe_get(args, 6, '')
 # socks.set_default_proxy(socks.SOCKS5, "127.0.0.1", 1086)
 # socket.socket = socks.socksocket
 
-
-def fetch_data() -> list:
-    data_ = '''{
-        "method": "torrent-get",
-        "arguments": {"fields": ["name","totalSize","trackerStats","activityDate","downloadDir"]},
-        "tag": ""
-    }'''
-    session = requests.Session()
-    session.headers.update({"user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"})
-    # base验证
-    if len(_username) > 0 and len(_password) > 0:
-        session.auth = HTTPBasicAuth(_username, _password)
-    resp = session.post(_tr_host + '/transmission/rpc', data=data_)
-    if resp.status_code == 409:  # 如果是409则添加请求头后重新请求重新请求
-        sessionId = resp.headers['x-transmission-session-id']
-        session.headers.update({'X-Transmission-Session-Id': sessionId})
-        resp = session.post(_tr_host + '/transmission/rpc', data=data_)
-    if resp.status_code == 401:
-        raise Exception('username or password is incorrect')
-    # 解析响应报文
-    if not resp.status_code == 200:
-        raise Exception("请求tr失败:", resp.text)
-    torrent_list: list = resp.json()['arguments']['torrents']
-    return torrent_list
-
-
-def parse_data(torrent_list: list) -> list:
-    _config_path = os.path.dirname(__file__) + '/../config/group_config.json'
-    with open(_config_path, 'r') as file:
-        configs: list = json.load(file)
-
-    _alias_config_path = os.path.dirname(__file__) + '/../config/site_alias_config.json'
-    with open(_alias_config_path, 'r') as file:
-        alias_configs: dict = json.load(file)
-        # 扩展配置文件为根域名形式
-        for k, v in dict(alias_configs).items():
-            domain = _extract_root_domain(k)
-            if domain != k:
-                alias_configs.setdefault(domain, v)
-
+def parse_data(torrent_list: list, alias_configs, group_config) -> list:
     # 预处理生成track关系映射
     # 有的种子有一个track，有个种子有多个track，如果同一个种子有多个track的则应该只计算一次
     # 比如有个种子有hkd.org,hkd.in两个track，其实这两个track都属于hkd这个站点的，则只统计一次到hkd.org上。并且后续的所有hkd.in都计算时当成hkd.org
@@ -138,7 +98,7 @@ def parse_data(torrent_list: list) -> list:
         # 决策别名,优先使用domain查找，查不到使用host查找，否则直接使用host
         target_alias = None
         for track in _track_list:
-            track['root_domain'] = _extract_root_domain(track['announce'])  # 提取根域名
+            track['root_domain'] = utils.extract_root_domain(track['announce'])  # 提取根域名
             if target_alias is None:
                 target_alias = alias_configs.get(track['root_domain'])
         if target_alias is None:
@@ -163,10 +123,13 @@ def parse_data(torrent_list: list) -> list:
         alias = first_tracker['alias']  # 前面统一设置过alias
         sitename = first_tracker['sitename']  # 前面统一设置过sitename，第一个track的站点名称作为整个种子的站点名称
         for track in torrent_json['trackerStats']:
-            torrent_item.append_track(sitename, alias, track['host'], track['announce'])
+            torrent_item.append_track(sitename, alias, track['announce'])
         # 筛选官种配置
-        _filter_config, _filter_site = _search_config(configs, torrent_item)
-        torrent_item.append_site(sitename, alias, _filter_config is not None and _filter_site == sitename, datetime.datetime.fromtimestamp(torrent_json['activityDate']).strftime('%Y-%m-%d %H:%M:%S'))
+        _filter_config, _filter_site = _search_config(group_config, torrent_item)
+        torrent_item.append_site(sitename
+                                 , alias
+                                 , _filter_config is not None and _filter_site == sitename
+                                 , datetime.datetime.fromtimestamp(torrent_json['activityDate']).strftime('%Y-%m-%d %H:%M:%S'))
         table.setdefault(key, torrent_item)
     # 将整理好的种子转移到result中，进行筛选个过滤
     result = []
@@ -178,19 +141,23 @@ def parse_data(torrent_list: list) -> list:
 def generate_detail_report(result):
     result = result[:]
     result = list(filter(lambda torr: torr.get_mb_size() > _show_min_size_mb, result))  # 过滤掉小于指定大小的种子
-    result = list(filter(lambda torr: torr.contain_track(_search_track), result))  # 筛选包含需要搜索的track字符的种子
+    result = list(filter(lambda torr: torr.contain_track(_search_track), result))  # 筛选包含需要搜索track字符的种子 _search_track
+    result = list(filter(lambda torr: torr.contain_path(_search_path), result))  # 筛选路径 _search_path
+    if _search_seed_count != -1:
+        result = list(filter(lambda torr: len(torr.get_site_list()) == _search_seed_count, result))  # 筛选 _search_seed_count
     result.sort(key=lambda torr: torr.get_size(), reverse=True)  # 从大到小排序排序
-    result = result[0:_show_count]  # 已经按大排序了，切片指定数量
+    result = result[0:_show_count]  # 已经按大排序了，切片指定数量  _show_count
     # 构建表格打印
     t = pt.PrettyTable(['文件名', '下载路径', '站点数量', '文件大小', '站点名称(最后活跃时间)'])
     for it in result:
-        t.add_row([
-            fill(it.get_name(), width=80),
-            it.get_download_dir(),
-            len(it.get_site_list()),
-            it.pretty_size(),
-            it.pretty_track()
-        ], divider=True)
+        # 明细子表
+        subTable = pt.PrettyTable(["站点", "官种", "最后活跃"])
+        for site in it.get_site_list():
+            subTable.add_row([site['alias'], '❤️' if site['is_group'] else '', site['last_update']])
+            subTable.sortby = '最后活跃'
+            subTable.reversesort = True
+        # 主表
+        t.add_row([fill(it.get_name(), width=80), it.get_download_dir(), len(it.get_site_list()), it.pretty_size(), subTable], divider=True)
     t.title = '文件明细视图'
     t.align['站点名称(最后活跃时间)'] = 'l'
     t.set_style(SINGLE_BORDER)
@@ -236,16 +203,16 @@ def generate_group_report(result):
             v['site'],
             v['alias'],
             v['g_count'],
-            _byte_format(v['g_size']),
+            byte_format(v['g_size']),
             v['o_count'],
-            _byte_format(v['o_size']),
+            byte_format(v['o_size']),
             v['g_count'] + v['o_count'],
-            _byte_format(v['g_size'] + v['o_size']),
+            byte_format(v['g_size'] + v['o_size']),
             v['multSeedCount'],
-            _byte_format(v['multSeedSize']),
+            byte_format(v['multSeedSize']),
             '%.2f%%' % (v['multSeedSize'] / (v['g_size'] + v['o_size']) * 100)
         ], divider=True)
-    t.title = '辅种视图,去重种子总数:%d 实际磁盘占用:%s' % (all_count, _byte_format(all_size))
+    t.title = '辅种视图,去重种子总数:%d 实际磁盘占用:%s' % (all_count, byte_format(all_size))
     t.set_style(SINGLE_BORDER)
     t.add_autoindex('序号')
     return t
@@ -258,7 +225,7 @@ def _search_config(configs: list, torr: Torrent):
         _config_host = _config['host']  # 允许配置中使用逗号分割多个
         _siteRegex = _config['siteRegex']
         for _track in torr.get_track_list():
-            if _extract_root_domain(_track['announce']) in _config_host and re.search(_siteRegex, torr.get_name(), re.I):  # 站点符合配置且官组符合配置
+            if utils.extract_root_domain(_track['announce']) in _config_host and re.search(_siteRegex, torr.get_name(), re.I):  # 站点符合配置且官组符合配置
                 _filter_config = _config
                 _filter_site = _track['site']
                 break
@@ -267,24 +234,23 @@ def _search_config(configs: list, torr: Torrent):
     return _filter_config, _filter_site
 
 
-def _extract_root_domain(url):
-    extracted = tldextract.extract(url)
-    root_domain = extracted.registered_domain
-    return root_domain
+config = Config()
+downloaders = config.get_downloader_config()
 
+# 获取数据
+data = []
+for downloader in downloaders:
+    if downloader['type'] == 'transmission':
+        tr = Transmission(downloader['url'], downloader['username'], downloader['password'])
+        data.extend(tr.fetch_data())
+    if downloader['type'] == 'qbittorent':
+        qb = Qbittorent(downloader['url'], downloader['username'], downloader['password'])
+        data.extend(qb.fetch_data())
 
-def _byte_format(bytes):
-    units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB']
-    s = float(bytes)
-    for unit in units:
-        if s < 1024:
-            return "%.2f %s" % (s, unit)
-        else:
-            s = s / 1024
-    return '有这么大吗'
-
-
-data = fetch_data()
-_parsed_data = parse_data(data)
+# 配置
+alias_configs = config.get_alias_config()
+configs = config.get_group_config()
+# 处理数据
+_parsed_data = parse_data(data, alias_configs, configs)
 print(generate_detail_report(_parsed_data))
 print(generate_group_report(_parsed_data))
