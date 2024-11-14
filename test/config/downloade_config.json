@@ -1,0 +1,16 @@
+[
+  {
+    "name": "qb下载器",
+    "type": "qbittorent",
+    "url": "http://192.168.1.8:6882",
+    "username": "admin",
+    "password": "adminadmin"
+  },
+  {
+    "name": "tr下载器",
+    "type": "transmission",
+    "url": "http://192.168.1.8:9091",
+    "username": "tr",
+    "password": "tr"
+  }
+]

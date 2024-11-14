@@ -1,5 +1,33 @@
 #!/bin/bash
 
+#docker固定src，非docker动态获取
+if [ "$_RUN_IN_DOCKER" == 'true' ]; then
+  WORKDIR="/src"
+else
+  WORKDIR=$(
+    cd "$(dirname "${BASH_SOURCE[0]}")" || exit
+    pwd
+  )
+fi
+
+BASE_CONFIG="${WORKDIR}/base_config"
+USER_CONFIG="${WORKDIR}/config"
+
+if [ ! -d "$USER_CONFIG" ]; then
+  mkdir "$USER_CONFIG"
+fi
+if [ ! -f "$USER_CONFIG/downloade_config.json" ]; then
+  cp "${BASE_CONFIG}/downloade_config.json" "$USER_CONFIG/downloade_config.json"
+fi
+if [ ! -f "$USER_CONFIG/group_config.json" ]; then
+  cp "${BASE_CONFIG}/group_config.json" "$USER_CONFIG/group_config.json"
+fi
+if [ ! -f "$USER_CONFIG/site_alias_config.json" ]; then
+  cp "${BASE_CONFIG}/site_alias_config.json" "$USER_CONFIG/site_alias_config.json"
+fi
+
+
+
 filter_size=0
 filter_count=500
 filter_track=
@@ -34,11 +62,11 @@ while getopts ':m:c:t:p:f:?:' opt; do
   esac
 done
 
-workdir=$(
-  cd "$(dirname "${BASH_SOURCE[0]}")" || exit
-  pwd
-)
-
-source "${workdir}"/.venv/bin/activate
-python3 "${workdir}"/core/main.py "$filter_size" "$filter_count" "$filter_track" "$filter_path" "$filter_mult_seed_count"
-deactivate
+#docker不走虚拟环境，非docker走虚拟环境
+if [ "$_RUN_IN_DOCKER" == 'true' ]; then
+  python3 "${WORKDIR}"/core/main.py "$filter_size" "$filter_count" "$filter_track" "$filter_path" "$filter_mult_seed_count"
+else
+  source "${WORKDIR}"/.venv/bin/activate
+  python3 "${WORKDIR}"/core/main.py "$filter_size" "$filter_count" "$filter_track" "$filter_path" "$filter_mult_seed_count"
+  deactivate
+fi
