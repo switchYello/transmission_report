@@ -1,6 +1,7 @@
 import requests
 
 import utils
+from urllib.parse import urlencode
 
 
 class Qbittorent:
@@ -21,8 +22,8 @@ class Qbittorent:
             "username": self._username,
             "password": self._password
         }
-        login_result = self._session.post(self._host + '/api/v2/auth/login', params=_params, timeout=10)
-        if login_result.status_code != 200:
+        login_result = self._session.post(self._host + '/api/v2/auth/login', data=urlencode(_params), timeout=10)
+        if login_result.status_code != 200 or 'Fails' in login_result.text:
             raise Exception("登陆失败:{} {}".format(login_result.status_code, login_result.text))
 
     def fetch_data(self) -> list:
@@ -32,9 +33,11 @@ class Qbittorent:
         if resp.status_code != 200:
             raise Exception("请求qb失败:{},{}:".format(resp.status_code, resp.text))
         resp = resp.json()
+        result = []
+        if 'torrents' not in resp or 'trackers' not in resp:
+            return result
         torrents: dict = resp['torrents']
         trackers: dict = resp['trackers']
-        result = []
         for k, v in torrents.items():
             item = {}
             item.update({'name': v['name']})
