@@ -20,7 +20,7 @@ class Transmission:
         # base验证
         if len(self._username) > 0 and len(self._password) > 0:
             session.auth = HTTPBasicAuth(self._username, self._password)
-        resp = session.post(self._host + '/transmission/rpc', data=data_)
+        resp = session.post(self._host + '/transmission/rpc', data=data_, timeout=10)
         if resp.status_code == 409:  # 如果是409则添加请求头后重新请求重新请求
             sessionId = resp.headers['x-transmission-session-id']
             session.headers.update({'X-Transmission-Session-Id': sessionId})

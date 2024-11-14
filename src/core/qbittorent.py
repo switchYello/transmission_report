@@ -17,7 +17,7 @@ class Qbittorent:
         self._login()
 
     def _login(self):
-        login_result = self._session.post(self._host + '/api/v2/auth/login', data='username=' + self._username + '&password=' + self._password)
+        login_result = self._session.post(self._host + '/api/v2/auth/login', data='username=' + self._username + '&password=' + self._password, timeout=10)
         if login_result.status_code != 200:
             raise Exception("登陆失败:{} {}".format(login_result.status_code, login_result.text))
 
