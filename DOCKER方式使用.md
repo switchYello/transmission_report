@@ -15,17 +15,25 @@ docker pull docker1062/transmission_report
 ```
 
 ### 🚩 2.第一次运行
-解释一下这行命令,他是用docker执行上面拉到的镜像，而镜像启动后输出报表然后自动停止。    
-    --rm 参数表示执行终止后自动清理掉容器  
-    -v 参数绑定参数路径到容器内部的固定位置  
-    --net=host 表示使用host模式启动，方便我们使用127.0.0.1访问其他容器  
-    docker1062/transmission_report 是镜像的名称
-
 ```shell
-docker run --rm -v /opt/docker/transmission_report/config:/src/config --net=host docker1062/transmission_report
+# 在某个位置新建一个配置文件夹
+mkdir /opt/docker/transmission_report/config
+
+# 执行命令，其中--user=1000:1000为你的用户，不指定就是默认的root用户
+docker run --rm --user=1000:1000 -v /opt/docker/transmission_report/config:/src/config --net=host docker1062/transmission_report
 ```
+解释一下这行命令,他是用docker执行上面拉到的镜像，而镜像启动后输出报表然后自动退出。    
+--rm 参数表示执行终止后自动清理掉容器  
+-v   参数绑定参数路径到容器内部的固定位置  
+--net=host 表示使用host模式启动，方便我们使用127.0.0.1访问其他容器  
+--user=1000:1000 表示使用哪个用户身份执行  
+docker1062/transmission_report 是镜像的名称  
+
+
 
 命令执行完成后会在`/opt/docker/transmission_report/config`目录下初始化三份配置文件。
+请注意config文件夹的权限，还有确保--user指定的用户能够读写这三份配置文件。  
+
 ```shell
 root@vm:/opt/docker/transmission_report# ll config/
 -rw-r--r-- 1 root root  161 Nov 14 18:54 downloade_config.json   #配置下载器的配置文件，支持qb和tr
@@ -33,7 +41,7 @@ root@vm:/opt/docker/transmission_report# ll config/
 -rw-r--r-- 1 root root  329 Nov 14 18:48 site_alias_config.json  #配置站点别名的配置文件
 ```
 
-👉️👉️👉️  **我们需要修改`downloade_confi.json`为我们系统自己的，默认的地址和账号密码可能不符合你的设定。**
+👉️👉️👉️  **我们需要修改`downloade_confi.json`为我们系统自己的，默认的地址和账号密码不符合你的设定。**
 
 ### 🚩 3. 后续使用
 下载器的配置修改好后就可以正常使用了。**添加不同参数输出报表，不添加任何参数时输出帮助信息。**
@@ -44,13 +52,13 @@ root@vm:/opt/docker/transmission_report# ll config/
 * -f 按照辅种站点数量过滤
 ```shell
 # 输出前100个
-docker run --rm -v /opt/docker/transmission_report/config:/src/config --net=host docker1062/transmission_report -c100
+docker run --rm --user=1000:1000 -v /opt/docker/transmission_report/config:/src/config --net=host docker1062/transmission_report -c100
 
-#筛选路径下前100个
-docker run --rm -v /opt/docker/transmission_report/config:/src/config --net=host docker1062/transmission_report -c100 -p downloads
+#筛选downloads路径下前100个
+docker run --rm --user=1000:1000 -v /opt/docker/transmission_report/config:/src/config --net=host docker1062/transmission_report -c100 -p downloads
 
 #筛选辅种数为1的
-docker run --rm -v /opt/docker/transmission_report/config:/src/config --net=host docker1062/transmission_report -f1
+docker run --rm --user=1000:1000 -v /opt/docker/transmission_report/config:/src/config --net=host docker1062/transmission_report -f1
 ```
 
 
@@ -117,7 +125,7 @@ docker run --rm -v /opt/docker/transmission_report/config:/src/config --net=host
 cd ~
 vi .bashrc
 # 在最后面添加这行
-alias report_tr="docker run --rm -v /opt/docker/transmission_report/config:/src/config --net=host docker1062/transmission_report"
+alias report_tr="docker run --rm --user=1000:1000 -v /opt/docker/transmission_report/config:/src/config --net=host docker1062/transmission_report"
 source .bashrc  #使之生效
 report_tr -c10 # 已经可以使用report_tr代替了后面一大串命令
 ```

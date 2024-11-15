@@ -1,4 +1,5 @@
 import datetime
+import logging
 import re
 import sys
 from textwrap import fill
@@ -69,6 +70,8 @@ class Torrent:
         self._site_list.sort(key=lambda t: t['site'])
         return "\n".join(map(lambda t: '{}({}){} ({})'.format(t['site'], t['alias'], '(官种)' if t['is_group'] else '', t['last_update']), self._site_list))
 
+
+logging.getLogger("tldextract").setLevel(logging.CRITICAL)
 
 # 参数接收
 args = sys.argv
