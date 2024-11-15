@@ -122,12 +122,11 @@ docker run --rm --user=1000:1000 -v /opt/docker/transmission_report/config:/src/
 ### 🚩 命令别名配置
 上面的命令很长，难以记住因此配置一个alias方便我们使用
 ```shell
-cd ~
-vi .bashrc
+vi ~/.bashrc
 # 在最后面添加这行
-alias report_tr="docker run --rm --user=1000:1000 -v /opt/docker/transmission_report/config:/src/config --net=host docker1062/transmission_report"
-source .bashrc  #使之生效
-report_tr -c10 # 已经可以使用report_tr代替了后面一大串命令
+alias reporttr="docker run --rm -v /opt/docker/transmission_report/config:/src/config --net=host docker1062/transmission_report"
+source ~/.bashrc  #使之生效
+reporttr -c10 # 已经可以使用report_tr代替了后面一大串命令
 ```
 
 ### 🚩 镜像更新
