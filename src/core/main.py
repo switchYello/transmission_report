@@ -244,10 +244,10 @@ downloaders = config.get_downloader_config()
 data = []
 for downloader in downloaders:
     if downloader['type'] == 'transmission':
-        tr = Transmission(downloader['url'], downloader['username'], downloader['password'])
+        tr = Transmission(utils.format_domain(downloader['url']), downloader['username'], downloader['password'])
         data.extend(tr.fetch_data())
     if downloader['type'] == 'qbittorent':
-        qb = Qbittorent(downloader['url'], downloader['username'], downloader['password'])
+        qb = Qbittorent(utils.format_domain(downloader['url']), downloader['username'], downloader['password'])
         data.extend(qb.fetch_data())
 
 # 配置
