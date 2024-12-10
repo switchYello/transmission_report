@@ -27,6 +27,9 @@
 1、支持docker模式运行  
 2、优化qb登陆问题  
 
+>2024-12-10 更新：  
+1、增加：咖啡、高清视界的别名
+
 ---- 
 
 😀😀 想要使用docker方式运行可以看这个[docker方式使用](https://github.com/switchYello/transmission_report/blob/main/DOCKER%E6%96%B9%E5%BC%8F%E4%BD%BF%E7%94%A8.md)，推荐用docker 😀😀
