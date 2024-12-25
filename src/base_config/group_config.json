@@ -1,7 +1,7 @@
 [
   {
     "--": "此配置文件修改自油猴脚本【官种保种统计】并加以改动适配python",
-    "host": "audiences.me",
+    "host": "audiences.me,cinefiles.info",
     "abbrev": "Audiences",
     "siteRegex": "[@-]\\s?(Audies|ADE|ADWeb|ADAudio|ADeBook|ADMusic)"
   },
