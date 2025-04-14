@@ -136,5 +136,10 @@
     "host": "hdpt.xyz",
     "abbrev": "明教",
     "siteRegex": "[@-]\\s?(HDPTWeb|HDPTGame|HDPTE)\\b"
+  },
+  {
+    "host": "qingwa.pro",
+    "abbrev": "青蛙",
+    "siteRegex": "[@-]\\s?FROG"
   }
 ]
