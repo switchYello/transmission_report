@@ -41,7 +41,7 @@
   {
     "host": "springsunday.net",
     "abbrev": "SSD",
-    "siteRegex": "[@-]\\s?(CMCT|Oldboys|GTR)\\b"
+    "siteRegex": "[@-]\\s?(CMCT|CMCTV|Oldboys|GTR)\\b"
   },
   {
     "host": "hdhome.org",
